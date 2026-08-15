@@ -9600,7 +9600,7 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
               UI.form({ title: '编辑学习计划', values: x, fields: [
                 { k: 'text', label: '计划内容', req: true, full: true }
               ].concat(examCatFields()).concat([{ k: 'due', label: '预计完成日期', type: 'date' }]) })
-                .then(function (v) { if (!v) return; Object.keys(v).forEach(function (k) { x[k] = v[k]; }); Store.save(); if (redraw) redraw(); });
+                .then(function (v) { if (!v) return; Object.keys(v).forEach(function (k) { x[k] = v[k]; }); Store.save(); App.refresh(); if (redraw) redraw(); });
             },
             hdel: function (t, e, redraw) {
               var x = D().exam.plans.filter(function (a) { return a.id === t.dataset.id; })[0];
@@ -9657,7 +9657,7 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
                 { k: 'date', label: '日期', type: 'date', req: true },
                 { k: 'mins', label: '时长（分钟）', type: 'number', min: 0, req: true }
               ].concat(examCatFields()).concat([{ k: 'content', label: '学了什么', type: 'textarea', rows: 4 }]) })
-                .then(function (v) { if (!v) return; Object.keys(v).forEach(function (k) { x[k] = v[k]; }); Store.save(); if (redraw) redraw(); });
+                .then(function (v) { if (!v) return; Object.keys(v).forEach(function (k) { x[k] = v[k]; }); Store.save(); App.refresh(); if (redraw) redraw(); });
             },
             hdel: function (t, e, redraw) {
               var x = D().exam.records.filter(function (a) { return a.id === t.dataset.id; })[0];
