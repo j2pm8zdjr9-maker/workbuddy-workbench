@@ -666,6 +666,37 @@ body.top-fixed .main{ padding-top:var(--topbar-h, 62px); }
 .form-live{ position:sticky; bottom:0; left:0; right:0; background:var(--card); padding:10px 2px 2px; border-top:1px dashed var(--line-2); margin-top:2px; font-size:13.5px; color:var(--brown); }
 .form-live b{ color:var(--olive-deep); font-variant-numeric:tabular-nums; }
 
+/* 表单内输入框的计算器按钮（🧮） */
+.calc-wrap{ display:flex; align-items:center; gap:6px; width:100%; }
+.calc-wrap .input{ flex:1; min-width:0; }
+.calc-btn{
+  flex:0 0 auto; width:40px; height:40px; border-radius:10px;
+  border:1px solid var(--olive-24); background:var(--olive-05); color:var(--olive-deep);
+  font-size:18px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  transition:background var(--t), transform var(--t);
+}
+.calc-btn:hover{ background:var(--olive-10); }
+.calc-btn:active{ transform:scale(.94); }
+
+/* 计算器弹窗 */
+.calc-modal-mask{ position:fixed; inset:0; z-index:1100; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.42); padding:16px; animation:fadeIn .15s var(--ease); }
+.calc-modal{ width:286px; max-width:100%; background:var(--card); border-radius:18px; box-shadow:0 16px 48px rgba(0,0,0,.28); overflow:hidden; }
+.calc-head{ display:flex; align-items:center; justify-content:space-between; padding:10px 14px; border-bottom:1px solid var(--line-2); }
+.calc-head span{ font-size:14px; font-weight:650; color:var(--brown-2); }
+.calc-x{ width:28px; height:28px; border:none; background:transparent; color:var(--brown-3); font-size:16px; border-radius:8px; cursor:pointer; }
+.calc-x:hover{ background:var(--olive-05); }
+.calc-display{ background:var(--olive-deep); color:#fff; padding:14px 16px; text-align:right; font-variant-numeric:tabular-nums; }
+.calc-expr{ font-size:13px; opacity:.82; min-height:18px; word-break:break-all; }
+.calc-res{ font-size:30px; font-weight:600; line-height:1.25; word-break:break-all; }
+.calc-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--line-2); }
+.calc-key{ border:none; background:var(--card); color:var(--brown); font-size:19px; padding:17px 0; cursor:pointer; transition:background .12s; user-select:none; }
+.calc-key:hover{ background:var(--olive-05); }
+.calc-key:active{ background:var(--olive-10); }
+.calc-key.op{ color:var(--olive-deep); font-weight:650; background:var(--olive-05); }
+.calc-key.eq{ color:var(--olive-deep); font-weight:650; background:var(--olive-10); }
+.calc-key.enter{ background:var(--olive); color:#fff; font-weight:650; font-size:17px; }
+.calc-key.enter:hover{ background:var(--olive-deep); }
+
 /* 快速添加行 */
 .quick-add{ display:flex; gap:10px; align-items:stretch; }
 .quick-add .input{ flex:1; }
@@ -3489,6 +3520,120 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
     }
   };
 
+  /* 通用计算器弹窗：挂载到任意输入框，计算后把结果填回该输入框。
+     用法：在 UI.form 的字段上加 { calc:true }，点击 🧮 即呼出。 */
+  function openCalcModal(inputEl) {
+    if (!inputEl) return;
+    var root = document.getElementById('modalRoot') || document.body;
+
+    function keyHtml(t, cls) { return '<button type="button" class="calc-key' + (cls ? ' ' + cls : '') + '" data-k="' + t + '">' + t + '</button>'; }
+    var mask = document.createElement('div');
+    mask.className = 'calc-modal-mask';
+    mask.innerHTML =
+      '<div class="calc-modal" role="dialog" aria-modal="true" aria-label="计算器">' +
+        '<div class="calc-head"><span>🧮 计算器</span><button type="button" class="calc-x tap" data-calx aria-label="关闭">✕</button></div>' +
+        '<div class="calc-display"><div class="calc-expr" id="calcExpr"></div><div class="calc-res" id="calcRes">0</div></div>' +
+        '<div class="calc-grid">' +
+          keyHtml('C', 'op') + keyHtml('⌫', 'op') + keyHtml('%', 'op') + keyHtml('÷', 'op') +
+          keyHtml('7') + keyHtml('8') + keyHtml('9') + keyHtml('×', 'op') +
+          keyHtml('4') + keyHtml('5') + keyHtml('6') + keyHtml('−', 'op') +
+          keyHtml('1') + keyHtml('2') + keyHtml('3') + keyHtml('+', 'op') +
+          keyHtml('0') + keyHtml('.') + keyHtml('=', 'eq') + keyHtml('填入', 'enter') +
+        '</div>' +
+      '</div>';
+    root.appendChild(mask);
+
+    var exprEl = mask.querySelector('#calcExpr');
+    var resEl = mask.querySelector('#calcRes');
+    var start = (inputEl.value && /^[\d.]+$/.test(String(inputEl.value).trim())) ? String(inputEl.value).trim() : '';
+    var expr = start;
+
+    function compute(s) {
+      if (!s) return '';
+      if (!/^[0-9.+\-*/%() ]+$/.test(s)) return '';
+      var t = s.replace(/(\d+(\.\d+)?)%/g, '($1/100)');
+      try {
+        var r = Function('"use strict";return (' + t + ')')();
+        if (typeof r !== 'number' || !isFinite(r)) return '';
+        return r;
+      } catch (e) { return ''; }
+    }
+    function fmt(n) { return (n === '' || n == null) ? '' : String(Math.round(n * 1e8) / 1e8); }
+    function render() {
+      exprEl.textContent = expr
+        ? expr.replace(/\*/g, '×').replace(/\//g, '÷').replace(/-/g, '−')
+        : '';
+      var r = compute(expr);
+      if (!expr) { resEl.textContent = '0'; resEl.style.color = '#fff'; }
+      else if (r === '') { resEl.textContent = '错误'; resEl.style.color = '#F4C7BC'; }
+      else { resEl.textContent = fmt(r); resEl.style.color = '#fff'; }
+    }
+    function appendToken(tok) {
+      if (/^[0-9]$/.test(tok) || tok === '.') {
+        if (tok === '.') {
+          var seg = expr.split(/[+\-*/]/).pop();
+          if (seg.indexOf('.') >= 0) return;
+          if (seg === '') { expr += '0.'; render(); return; }
+        }
+        expr += tok;
+      } else if (tok === '+' || tok === '-' || tok === '*' || tok === '/') {
+        if (expr === '') { if (tok === '-') { expr = '-'; render(); } return; }
+        if (/[+\-*/]$/.test(expr)) expr = expr.slice(0, -1) + tok;
+        else expr += tok;
+      }
+      render();
+    }
+    function back() { expr = expr.slice(0, -1); render(); }
+    function clearAll() { expr = ''; render(); }
+    function equals() { var r = compute(expr); if (r !== '') { expr = fmt(r); render(); } }
+    function enter() {
+      var r = compute(expr);
+      if (r === '') { resEl.textContent = '无法计算'; resEl.style.color = '#F4C7BC'; return; }
+      var val = fmt(r);
+      inputEl.value = val;
+      inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+      inputEl.dispatchEvent(new Event('change', { bubbles: true }));
+      closeCalc();
+    }
+    function closeCalc() {
+      document.removeEventListener('keydown', onKey, true);
+      mask.remove();
+    }
+    function onKey(e) {
+      if (e.key >= '0' && e.key <= '9') { appendToken(e.key); e.preventDefault(); }
+      else if (e.key === '.') { appendToken('.'); e.preventDefault(); }
+      else if (e.key === '+' || e.key === '-' || e.key === '*' || e.key === '/') {
+        appendToken(e.key === '*' ? '*' : (e.key === '/' ? '/' : (e.key === '-' ? '-' : '+')));
+        e.preventDefault();
+      }
+      else if (e.key === 'Enter') { e.preventDefault(); if (e.shiftKey) equals(); else enter(); }
+      else if (e.key === 'Backspace') { back(); e.preventDefault(); }
+      else if (e.key === 'Escape') { closeCalc(); e.preventDefault(); }
+    }
+    mask.addEventListener('click', function (e) {
+      if (e.target === mask) { closeCalc(); return; }
+      var x = e.target.closest('[data-calx]');
+      if (x) { closeCalc(); return; }
+      var b = e.target.closest('[data-k]');
+      if (!b) return;
+      var k = b.getAttribute('data-k');
+      if (k === 'C') clearAll();
+      else if (k === '⌫') back();
+      else if (k === '=') equals();
+      else if (k === '填入') enter();
+      else if (k === '%') appendToken('%');
+      else if (k === '×') appendToken('*');
+      else if (k === '÷') appendToken('/');
+      else if (k === '−') appendToken('-');
+      else if (k === '+') appendToken('+');
+      else appendToken(k);
+    });
+    document.addEventListener('keydown', onKey, true);
+    render();
+    var fk = mask.querySelector('.calc-key');
+    if (fk) fk.focus();
+  }
+
   var UI = {
 
     /* ---------- 基础块 ---------- */
@@ -3764,7 +3909,13 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
             if (f.type === 'number' || isMoney) extra = ' step="' + (f.step || 'any') + '"' + (f.min !== undefined ? ' min="' + f.min + '"' : '') + (f.max !== undefined ? ' max="' + f.max + '"' : '') + ' inputmode="decimal"';
             else if (f.type === 'date' || f.type === 'time') extra = ' inputmode="numeric"';
             var listAttr = f.list ? ' list="' + f.k + '-list"' : '';
-            inner = '<input class="input' + (isMoney ? ' money-input' : '') + '" type="' + (f.type || 'text') + '" name="' + f.k + '" value="' + esc(v) + '" placeholder="' + esc(f.ph || '') + '"' + extra + listAttr + '>';
+            var inputHtml = '<input class="input' + (isMoney ? ' money-input' : '') + '" type="' + (f.type || 'text') + '" name="' + f.k + '" value="' + esc(v) + '" placeholder="' + esc(f.ph || '') + '"' + extra + listAttr + '>';
+            if (f.calc && (f.type === 'number' || isMoney)) {
+              inner = '<span class="calc-wrap">' + inputHtml +
+                '<button type="button" class="calc-btn tap" data-calc="' + esc(f.k) + '" aria-label="打开计算器">🧮</button></span>';
+            } else {
+              inner = inputHtml;
+            }
             if (f.list) {
               inner += '<datalist id="' + f.k + '-list">' + f.list.map(function (o) {
                 return '<option value="' + esc(o) + '"></option>';
@@ -3958,6 +4109,13 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
 
         el.addEventListener('click', function (e) {
           if (e.target === el || e.target.closest('[data-x]')) return close(null);
+          var cbtn = e.target.closest('[data-calc]');
+          if (cbtn) {
+            e.preventDefault();
+            var cinp = el.querySelector('[name="' + cbtn.getAttribute('data-calc') + '"]');
+            if (cinp) openCalcModal(cinp);
+            return;
+          }
           var qb = e.target.closest('[data-quick]');
           if (qb) {
             var p = qb.dataset.quick.split('::');
@@ -9902,7 +10060,7 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
             { k: 'place', label: '充电地点', type: 'select', options: EV_PLACES, def: '在家充' },
             { k: 'fromPct', label: '充电前电量（%）', type: 'number', min: 0, max: 100, step: 1, req: true, ph: '如 30' },
             { k: 'toPct', label: '充电后电量（%）', type: 'number', min: 0, max: 100, step: 1, def: 100, ph: '默认 100（充满）' },
-            { k: 'meterKwh', label: '电表度数（度）', type: 'number', step: 0.01, min: 0, req: false, ph: '本次电表走字', hint: '电表有延迟？可先留空，记录会置顶提醒，第二天抄表后点「填电表」补填' },
+            { k: 'meterKwh', label: '电表度数（度）', type: 'number', step: 0.01, min: 0, req: false, calc: true, ph: '本次电表走字', hint: '电表有延迟？可先留空，记录会置顶提醒，第二天抄表后点「填电表」补填' },
             { k: 'price', label: '电价（元/度）', type: 'number', step: 0.0001, min: 0, ph: '留空用配置电价' },
             { k: 'odoBefore', label: '充电前总里程（km）', type: 'number', step: 1, min: 0, hint: '用于自动计算两次充电间里程差' }
           ]
@@ -9931,7 +10089,7 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
             { k: 'place', label: '充电地点', type: 'select', options: EV_PLACES, def: '在家充' },
             { k: 'fromPct', label: '充电前电量（%）', type: 'number', min: 0, max: 100, step: 1, req: true },
             { k: 'toPct', label: '充电后电量（%）', type: 'number', min: 0, max: 100, step: 1 },
-            { k: 'meterKwh', label: '电表度数（度）', type: 'number', step: 0.01, min: 0, req: false, hint: '可留空，稍后抄表再补填（记录会置顶提醒）' },
+            { k: 'meterKwh', label: '电表度数（度）', type: 'number', step: 0.01, min: 0, req: false, calc: true, hint: '可留空，稍后抄表再补填（记录会置顶提醒）' },
             { k: 'price', label: '电价（元/度）', type: 'number', step: 0.0001, min: 0 },
             { k: 'odoBefore', label: '充电前总里程（km）', type: 'number', step: 1, min: 0 }
           ]
@@ -9958,7 +10116,7 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
           title: '填电表度数',
           values: { meterKwh: '', price: num(c.price) || num(ev().price) || 0.3353 },
           fields: [
-            { k: 'meterKwh', label: '电表度数（度）', type: 'number', step: 0.01, min: 0, req: true, ph: '本次电表走字', hint: '填好后该记录自动取消置顶' },
+            { k: 'meterKwh', label: '电表度数（度）', type: 'number', step: 0.01, min: 0, req: true, calc: true, ph: '本次电表走字', hint: '填好后该记录自动取消置顶' },
             { k: 'price', label: '电价（元/度）', type: 'number', step: 0.0001, min: 0 }
           ]
         }).then(function (v) {
@@ -13095,7 +13253,7 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
   function flowFields(type) {
     return [
       { k: 'type', label: '类型', type: 'select', options: [{ v: 'out', t: '支出' }, { v: 'in', t: '收入' }], def: type || 'out' },
-      { k: 'amount', label: '金额', type: 'number', min: 0, req: true, money: true },
+      { k: 'amount', label: '金额', type: 'number', min: 0, req: true, money: true, calc: true },
       { k: 'acc', label: '账户', type: 'select', req: true, options: F().accounts.map(function (a) { return { v: a.id, t: a.name }; }) },
       { k: 'date', label: '日期', type: 'date', req: true, def: U.today() },
       { k: 'time', label: '时间', type: 'time', req: true, def: U.nowTime() },
