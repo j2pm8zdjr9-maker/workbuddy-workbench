@@ -10,6 +10,8 @@
 <meta data-page-node-id="qceGVB9ivxzoMZyaq7YDhx" content="yes" name="apple-mobile-web-app-capable">
 <meta data-page-node-id="Cp4uN8i3T6AQLE3H5t9L6t" content="yes" name="mobile-web-app-capable">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="color-scheme" content="light dark">
+<meta name="format-detection" content="telephone=no, email=no, address=no">
 <meta name="apple-mobile-web-app-title" content="个人工作台">
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
@@ -209,6 +211,7 @@ a{ color:var(--olive-deep); text-decoration:none; }
   position:sticky; top:0; height:var(--vh-real);
   overflow:hidden;
   padding:16px 12px calc(12px + env(safe-area-inset-bottom));
+  padding-top:calc(16px + env(safe-area-inset-top));
   z-index:60;
 }
 .brand{ display:flex; align-items:center; gap:11px; padding:4px 10px 14px; }
@@ -274,10 +277,12 @@ a{ color:var(--olive-deep); text-decoration:none; }
   position:sticky; top:0; z-index:40;
   display:flex; align-items:center; gap:12px;
   padding:10px 18px; min-height:48px;
+  padding-left:calc(18px + env(safe-area-inset-left));
+  padding-right:calc(18px + env(safe-area-inset-right));
+  padding-top:calc(10px + env(safe-area-inset-top));
   background:rgba(253,252,244,.9);
   backdrop-filter:saturate(1.4) blur(10px);
   border-bottom:1px solid var(--line);
-  padding-top:calc(10px + env(safe-area-inset-top));
 }
 /* 顶部导航栏固定（设置项「顶部导航栏固定」开启时生效）：
    用 position:fixed 让顶栏相对视口常驻顶部，彻底绕开嵌套滚动容器导致 sticky 失效的问题；
@@ -301,9 +306,11 @@ body.top-fixed .main{ padding-top:var(--topbar-h, 62px); }
 .save-flag.show{ opacity:1; }
 .save-flag.warn{ color:#fff; background:var(--danger); }
 
-/* 一键置顶悬浮按钮 */
+/* 一键置顶悬浮按钮（位置会被 JS 在 standalone 模式时叠加 safe-area-inset-bottom，见 .top-fab 适配代码） */
 .top-fab{
-  position:fixed; right:27px; bottom:10px;
+  position:fixed;
+  right:calc(27px + env(safe-area-inset-right));
+  bottom:10px;
   width:32px; height:32px; border-radius:50%; border:0;
   background:var(--olive); color:#fff; display:flex; align-items:center; justify-content:center;
   box-shadow:0 2px 8px rgba(62,125,38,.26); z-index:61;
@@ -320,6 +327,8 @@ body.top-fixed .main{ padding-top:var(--topbar-h, 62px); }
   flex:1; width:100%; max-width:1040px; margin:0 auto;
   /* 220px 覆盖 FAB 占距底约 200px(bottom:150+高50) + 视觉气口，避免最后内容被悬浮按钮遮挡 */
   padding:18px 18px calc(180px + env(safe-area-inset-bottom));
+  padding-left:calc(18px + env(safe-area-inset-left));
+  padding-right:calc(18px + env(safe-area-inset-right));
   display:flex; flex-direction:column; gap:var(--gap);
   animation:fadeUp .3s var(--ease);
 }
@@ -576,7 +585,8 @@ body.top-fixed .main{ padding-top:var(--topbar-h, 62px); }
 .field{ display:flex; flex-direction:row; align-items:flex-start; gap:12px; padding:7px 2px; border-bottom:1px solid var(--line-2); }
 .field:last-child{ border-bottom:none; }
 .field.full{ display:flex; }
-.field > label{ flex:0 0 auto; min-width:90px; padding-top:9px; font-size:15px; color:var(--brown-2); font-weight:550; line-height:1.3; white-space:nowrap; }
+/* 表单 label：留 4px 左内边距，避免长文本贴近 .modal 圆角；安全区由 .modal-head/body 整体承载 */
+.field > label{ flex:0 0 auto; min-width:90px; padding:9px 6px 0 4px; font-size:15px; color:var(--brown-2); font-weight:550; line-height:1.3; white-space:nowrap; }
 .field-r{ flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; align-items:flex-end; text-align:right; }
 /* 默认输入框保持原有边框，弹窗表单内(.field-r)才用无边框详情风格 */
 .input, .select, .textarea{
@@ -592,7 +602,7 @@ body.top-fixed .main{ padding-top:var(--topbar-h, 62px); }
 }
 .input::placeholder,.textarea::placeholder{ color:var(--brown-4); }
 .field-r .input, .field-r .select, .field-r .textarea{
-  padding:11px 6px; min-height:44px;
+  padding:11px 10px; min-height:44px;
   border:none; border-radius:0;
   background:transparent; text-align:right;
   box-shadow:none;
@@ -856,6 +866,20 @@ body.top-fixed .main{ padding-top:var(--topbar-h, 62px); }
   margin-top:8px; padding-top:8px; border-top:1px solid var(--line);
 }
 .item-detail-ops .btn.sm{ font-size:12.5px; padding:5px 14px; }
+/* 列表项展开后底部的「编辑 / 删除」独立操作行：两条按钮并排、全宽、与卡片圆角一致。
+   适用于纪念日、人情等带「展开 = 内联操作」语义的卡片，避免 ops 与计数挤在同一行。 */
+.item-ops-row{
+  display:flex; gap:8px;
+  margin-top:8px;
+  padding-top:10px;
+  border-top:1px dashed var(--line-2);
+  min-width:0; /* 让按钮组的子项可被等分 */
+}
+.item-ops-row .btn{
+  flex:1 1 0; min-width:0;
+  min-height:42px; padding:7px 10px;
+  font-size:13.5px;
+}
 .item .caret{
   display:inline-flex; align-items:center; justify-content:center;
   width:20px; height:20px; flex:0 0 auto;
@@ -1340,6 +1364,8 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
   flex:0 0 auto;
 }
 .modal-head h3{ font-size:16px; font-weight:650; }
+/* 弹窗表单内左右各预留 8px 兜底安全气口，避免与 iOS PWA 横屏、刘海/灵动岛侧边安全区挤压；
+   小屏（手机）会在下方 @media(max-width:900px) 内继续叠加 env(safe-area-inset-*) */
 .modal-body{ padding:6px 18px 4px; display:flex; flex-direction:column; gap:14px; }
 .modal-foot{
   padding:13px 18px calc(14px + env(safe-area-inset-bottom));
@@ -1401,22 +1427,50 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
   body.nav-open .scrim{ opacity:1; pointer-events:auto; }
   body.nav-open{ overflow:hidden; }
   #menuBtn{ display:grid; }
-  .topbar{ padding-left:14px; padding-right:14px; }
+  .topbar{
+    padding-left:calc(14px + env(safe-area-inset-left));
+    padding-right:calc(14px + env(safe-area-inset-right));
+  }
   body.top-fixed .topbar{ left:0; }
   .topbar h1{ font-size:15.5px; }
   .home-pill{ margin-right:2px; }   /* 移动端贴近右边缘 */
-  .view{ padding:13px 14px calc(40px + env(safe-area-inset-bottom)); }
+  .view{
+    padding:13px 14px calc(40px + env(safe-area-inset-bottom));
+    padding-left:calc(14px + env(safe-area-inset-left));
+    padding-right:calc(14px + env(safe-area-inset-right));
+  }
   .card{ padding:14px 13px; border-radius:15px; }
-  .modal-mask{ padding:0; align-items:flex-end; }
+  /* 手机端弹窗为底部抽屉；左右内嵌 iOS PWA 横屏/灵动岛侧安全区，
+     防止刘海在横屏时挤压 .modal-head 标题与表单 label。 */
+  .modal-mask{
+    padding:0;
+    padding-left:env(safe-area-inset-left);
+    padding-right:env(safe-area-inset-right);
+    align-items:flex-end;
+  }
   .modal{
     max-width:none; border-radius:22px 22px 0 0;
     max-height:92dvh; /* 旧浏览器兜底 */
     max-height:min(100%, calc(var(--svh-real) * .92));
-    margin:auto 0 0;
+    margin:0;
     animation:sheetIn .28s var(--ease);
   }
   @keyframes sheetIn{ from{transform:translateY(100%);} to{transform:none;} }
-  .modal-head{ border-radius:22px 22px 0 0; }
+  /* 弹窗头/体/底：左右叠加水平安全区，顶部加 env(safe-area-inset-top)（键盘弹起或横屏时仍能看见标题） */
+  .modal-head{
+    border-radius:22px 22px 0 0;
+    padding-left:calc(18px + env(safe-area-inset-left));
+    padding-right:calc(18px + env(safe-area-inset-right));
+    padding-top:calc(14px + env(safe-area-inset-top, 0px));
+  }
+  .modal-body{
+    padding-left:calc(18px + env(safe-area-inset-left));
+    padding-right:calc(18px + env(safe-area-inset-right));
+  }
+  .modal-foot{
+    padding-left:calc(18px + env(safe-area-inset-left));
+    padding-right:calc(18px + env(safe-area-inset-right));
+  }
   .quick-add{ flex-wrap:wrap; }
   .quick-add .input{ flex:1 1 100%; }
   .quick-add .btn{ flex:1; }
@@ -1986,8 +2040,12 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
 /* 移动端始终显示操作按钮 */
 @media (max-width:768px){
   .sch-item-ops{ opacity:1; flex-direction:row; gap:6px; align-items:center; }
-  /* 移动端 FAB 缩小（46×46 仍≥iOS 44 touch target）+ 略下移，配合 .view padding-bottom 220px 避开 */
-  .fab, .sch-fab{ width:46px; height:46px; font-size:22px; bottom:140px; right:14px; }
+  /* 移动端 FAB 缩小（46×46 仍≥iOS 44 touch target）+ 略下移，配合 .view padding-bottom 220px 避开；
+     right 叠加 env(safe-area-inset-right) 避免 iOS 横屏/灵动岛遮挡 */
+  .fab, .sch-fab{
+    width:46px; height:46px; font-size:22px; bottom:140px;
+    right:calc(14px + env(safe-area-inset-right));
+  }
 }
 
 /* 日程列表：备注折叠 */
@@ -2011,7 +2069,7 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
    .view 配 padding-bottom:calc(220px + safe-area) 避免遮挡最后内容；
    移动端（≤768px）缩小到 46px 并下移至 140px（占距底约 186px，仍在 220px 留白内） */
 .fab, .sch-fab{
-  position:fixed; right:18px; bottom:150px; z-index:60;
+  position:fixed; right:calc(18px + env(safe-area-inset-right)); bottom:150px; z-index:60;
   width:50px; height:50px; border-radius:50%;
   background:linear-gradient(135deg,#3B82F6,#2563EB);
   color:#fff; border:none; font-size:26px; font-weight:300;
@@ -13368,7 +13426,7 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
         (isLunar ? '<span class="badge purple">农历</span>' : '') +
         (x.yearly ? '<span class="badge">每年</span>' : '') + '</div></div></div>';
     }
-    // 展开态
+    // 展开态：操作按钮（编辑/删除）改到底部独立一行，全宽 btn，与折叠态右上箭头呼应
     return '<div class="item' + (n >= 0 && n <= 7 ? ' hl' : '') + ' open" data-act="aexp" data-id="' + x.id + '">' +
       '<div class="item-main">' +
       '<div class="row between"><span class="item-title">' + esc(x.name) + (n === 0 ? ' 🎉' : '') + '</span>' +
@@ -13378,8 +13436,11 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
       (isLunar ? '<span class="badge purple">农历 · ' + lunarTxt + '</span>' : '') +
       '<span>' + U.fmtDate(nd, true) + '</span>' +
       (x.yearly ? '<span class="badge">每年重复' + (years > 0 ? ' · 第 ' + years + ' 年' : '') + '</span>' : '') +
-      (x.note ? '<span>' + esc(x.note) + '</span>' : '') + '</div></div>' +
-      UI.ops(x.id, 'edit', 'del') + '</div>';
+      (x.note ? '<span>' + esc(x.note) + '</span>' : '') + '</div>' +
+      '<div class="item-ops-row">' +
+      '<button class="btn ghost sm tap" data-act="edit" data-id="' + x.id + '">✏️ 编辑</button>' +
+      '<button class="btn danger sm tap" data-act="del" data-id="' + x.id + '">🗑 删除</button>' +
+      '</div></div></div>';
   }
 
   var anniv = {
