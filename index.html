@@ -5168,7 +5168,7 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
     });
     if (pagerEl) {
       pagerEl.addEventListener('change', function (e) {
-        if (e.target.matches('[data-chg="histSize"]')) { setSz(modId, +e.target.value); setPg(modId, 1); draw(); }
+        if (e.target.matches('[data-chg="histSize"]')) { setSz(modId, +e.target.value); setPg(modId, 1); setTimeout(function () { draw(); }, 0); }
       });
     }
     return el;
@@ -5330,7 +5330,9 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
     var ns = t.dataset.ns;
     set(ns, 'sz', +t.value);
     resetPg(ns);
-    w.App.refresh();
+    // 延迟到下一轮事件循环再做整体重绘：部分移动端 WebView 在原生 <select> 选择后
+    // 若立即替换上层 innerHTML，会出现「已改但不重绘、需退出重进才生效」的问题。
+    setTimeout(function () { w.App.refresh(); }, 0);
   }
 
   w.ListPager = {
@@ -5961,7 +5963,7 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
       var fn = checkin.acts[act]; if (fn) { e.preventDefault(); fn(t, e); }
     });
     if (pagerEl) pagerEl.addEventListener('change', function (e) {
-      if (e.target.matches('[data-chg="histSize"]')) { chSz = +e.target.value; chPg = 1; drawList(); }
+      if (e.target.matches('[data-chg="histSize"]')) { chSz = +e.target.value; chPg = 1; setTimeout(function () { drawList(); }, 0); }
     });
     return el;
   }
@@ -10257,10 +10259,10 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
       evPlaceClear: function () { App.setTab('vehicle', 'evPlaces', ''); evPg = 1; App.refresh(); },
       /* 充电记录主列表分页 */
       evPage: function (t) { evPg = num(t.dataset.k) || 1; App.refresh(); },
-      evSize: function (t) { evSz = num(t.value) || 5; evPg = 1; App.refresh(); },
+      evSize: function (t) { evSz = num(t.value) || 5; evPg = 1; setTimeout(function () { App.refresh(); }, 0); },
       /* 加油记录主列表分页 */
       fuelPage: function (t) { fuelPg = num(t.dataset.k) || 1; App.refresh(); },
-      fuelSize: function (t) { fuelSz = num(t.value) || 5; fuelPg = 1; App.refresh(); },
+      fuelSize: function (t) { fuelSz = num(t.value) || 5; fuelPg = 1; setTimeout(function () { App.refresh(); }, 0); },
 
       /* 时间筛选器：打开选择面板 */
       tfOpen: function (t) {
@@ -10737,7 +10739,7 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
         }
       });
       pagerEl.addEventListener('change', function (e) {
-        if (e.target.matches('[data-chg="dhSize"]')) { dh.sz = +e.target.value || 10; dh.pg = 1; draw(); }
+        if (e.target.matches('[data-chg="dhSize"]')) { dh.sz = +e.target.value || 10; dh.pg = 1; setTimeout(function () { draw(); }, 0); }
       });
     },
 
@@ -10800,7 +10802,7 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
       hist: function () { diary.openHist(); },
       tfOpen: function (t) { TF.open(t.dataset.tf, { onChange: function () { diPg = 1; App.refresh(); } }); },
       diPage: function (t) { diPg = +t.dataset.k || 1; App.refresh(); },
-      diSize: function (t) { diSz = +t.value || 10; diPg = 1; App.refresh(); },
+      diSize: function (t) { diSz = +t.value || 10; diPg = 1; setTimeout(function () { App.refresh(); }, 0); },
       new: function () { openEditor(null); },
       open: function (t) { openDetail(t.dataset.id); },
       zoom: function (t) { openLightbox(t.dataset.src); },
