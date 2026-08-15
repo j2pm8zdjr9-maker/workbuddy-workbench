@@ -17,9 +17,19 @@
 
 已通过 GitHub Pages 发布（见仓库 Settings → Pages）。
 
+## 添加到手机主屏幕（PWA / 网页 APP）
+
+iOS Safari：打开网址 → 底部「分享」 → 滑到「添加到主屏幕」→ 确认。会自动用 `apple-touch-icon.png`（180×180）作为图标。
+Android Chrome：右上角菜单 → 「添加到主屏幕」/「安装应用」。会自动用 `icon-192.png` / `icon-512.png`，并以 `manifest.json` 启动为全屏 standalone 模式。
+
 ## 目录结构
 
 ```
-index.html   主程序（全部 HTML/CSS/JS 内联）
-.nojekyll    关闭 GitHub Pages 的 Jekyll 处理
+index.html               主程序（全部 HTML/CSS/JS 内联）
+apple-touch-icon.png     iOS 主屏图标（180×180）
+icon-192.png             PWA 标准图标（192×192）
+icon-512.png             PWA 大图标（512×512）
+icon-maskable-512.png    PWA 安全边距版（512×512，适用于部分启动器）
+manifest.json            PWA 清单（name / icons / theme_color / start_url）
+.nojekyll                关闭 GitHub Pages 的 Jekyll 处理
 ```
