@@ -6584,8 +6584,7 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
               if (!x) return;
               UI.del(esc(x.title), function () {
                 D().tasks = D().tasks.filter(function (a) { return a.id !== x.id; });
-                Store.save();
-                if (redraw) redraw();
+                Store.save(); App.refresh(); if (redraw) redraw();
               });
             }
           }
@@ -6862,8 +6861,7 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
             if (!x) return;
             UI.del((x.content || '').slice(0, 20), function () {
               D().worklog = D().worklog.filter(function (a) { return a.id !== x.id; });
-              Store.save();
-              if (redraw) redraw();
+              Store.save(); App.refresh(); if (redraw) redraw();
             });
           }
         }
@@ -9609,8 +9607,7 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
               if (!x) return;
               UI.del(esc(x.text || '学习计划'), function () {
                 D().exam.plans = D().exam.plans.filter(function (a) { return a.id !== x.id; });
-                Store.save();
-                if (redraw) redraw();
+                Store.save(); App.refresh(); if (redraw) redraw();
               });
             }
           }
@@ -9667,8 +9664,7 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
               if (!x) return;
               UI.del(esc(examCatText(x) || '学习记录'), function () {
                 D().exam.records = D().exam.records.filter(function (a) { return a.id !== x.id; });
-                Store.save();
-                if (redraw) redraw();
+                Store.save(); App.refresh(); if (redraw) redraw();
               });
             }
           }
@@ -9719,8 +9715,7 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
               UI.del(esc(it.k === 'plan' ? (it.x.text || '计划') : (examCatText(it.x) || '记录')), function () {
                 if (it.k === 'plan') D().exam.plans = D().exam.plans.filter(function (a) { return a.id !== it.x.id; });
                 else if (it.k === 'record') D().exam.records = D().exam.records.filter(function (a) { return a.id !== it.x.id; });
-                Store.save();
-                if (redraw) redraw();
+                Store.save(); App.refresh(); if (redraw) redraw();
               });
             }
           }
@@ -11756,7 +11751,7 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
               if (m) {
                 UI.del('身体数据', function () {
                   D().body.measures = D().body.measures.filter(function (a) { return a.id !== id; });
-                  Store.save(); if (redraw) redraw();
+                  Store.save(); App.refresh(); if (redraw) redraw();
                 });
                 return;
               }
@@ -11764,7 +11759,7 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
               if (s) {
                 UI.del(esc(s.type || '运动'), function () {
                   D().body.sports = D().body.sports.filter(function (a) { return a.id !== id; });
-                  Store.save(); if (redraw) redraw();
+                  Store.save(); App.refresh(); if (redraw) redraw();
                 });
                 return;
               }
@@ -11772,7 +11767,7 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
               if (f) {
                 UI.del(esc(f.food || '餐食'), function () {
                   D().body.meals = D().body.meals.filter(function (a) { return a.id !== id; });
-                  Store.save(); if (redraw) redraw();
+                  Store.save(); App.refresh(); if (redraw) redraw();
                 });
                 return;
               }
@@ -11782,7 +11777,7 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
                   var w = D().body.water || {}; delete w[wd];
                   var lg = D().body.waterLog || {}; delete lg[wd];
                   D().body.water = w; D().body.waterLog = lg;
-                  Store.save(); if (redraw) redraw();
+                  Store.save(); App.refresh(); if (redraw) redraw();
                 });
                 return;
               }
@@ -12246,7 +12241,7 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
               if (st) {
                 UI.del(esc(st.name || ''), function () {
                   D().items.stock = D().items.stock.filter(function (a) { return a.id !== id; });
-                  Store.save(); if (redraw) redraw();
+                  Store.save(); App.refresh(); if (redraw) redraw();
                 });
                 return;
               }
@@ -12254,7 +12249,7 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
               if (co) {
                 UI.del(esc(co.name || ''), function () {
                   D().items.consum = D().items.consum.filter(function (a) { return a.id !== id; });
-                  Store.save(); if (redraw) redraw();
+                  Store.save(); App.refresh(); if (redraw) redraw();
                 });
                 return;
               }
@@ -13093,8 +13088,7 @@ table.tbl td.ops{ white-space:nowrap; text-align:right; }
               if (!f) return;
               UI.del(esc(f.cat || '未分类'), function () {
                 F().flows = F().flows.filter(function (a) { return a.id !== f.id; });
-                Store.save();
-                if (redraw) redraw();
+                Store.save(); App.refresh(); if (redraw) redraw();
               });
             },
             finImport: function () {
